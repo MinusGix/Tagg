@@ -24,14 +24,14 @@ impl Storage {
             .filter(move |x| x.filename.starts_with(prefix))
     }
 
-    pub(crate) fn find_single_file_mut_from_prefix<'a>(
-        &'a mut self,
-        prefix: &str,
-    ) -> Option<&'a mut FileInfo> {
-        self.files
-            .iter_mut()
-            .find(move |x| x.filename.starts_with(prefix))
-    }
+    // pub(crate) fn find_single_file_mut_from_prefix<'a>(
+    //     &'a mut self,
+    //     prefix: &str,
+    // ) -> Option<&'a mut FileInfo> {
+    //     self.files
+    //         .iter_mut()
+    //         .find(move |x| x.filename.starts_with(prefix))
+    // }
 
     // TODO: I think these lifetimes are iffy
     /// Given some prefix (or exact version) of the id, get the file info structure

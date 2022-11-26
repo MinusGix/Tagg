@@ -85,6 +85,12 @@ enum Commands {
         file: String,
         message: String,
     },
+    /// Set the desc of a single file
+    #[command(arg_required_else_help = true)]
+    SetDesc {
+        file: String,
+        message: String,
+    },
     /// Search based on tags
     #[command(arg_required_else_help = true)]
     Find {

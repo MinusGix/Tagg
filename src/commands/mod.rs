@@ -253,6 +253,16 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
 
             tagg.save_state()?;
         }
+        Commands::SetDesc { file, message } => {
+            let title = "desc".to_string();
+            if let Some(file) =
+                get_single_file_mut_from_prefix(&mut stdout, &mut tagg.state.storage, &file)?
+            {
+                file.comments.insert(title, message);
+            }
+
+            tagg.save_state()?;
+        }
         Commands::ListAll {} => {
             list_all::list_all(&tagg.state)?;
         }
