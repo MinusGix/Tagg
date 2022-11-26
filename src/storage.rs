@@ -12,6 +12,38 @@ use serde::{Deserialize, Serialize};
 pub struct Storage {
     pub files: Vec<FileInfo>,
 }
+impl Storage {
+    // TODO: I think these lifetimes are iffy
+    /// Given some prefix (or exact version) of the id, get the file info structure
+    pub fn find_file_from_prefix<'a, 'b: 'a>(
+        &'a self,
+        prefix: &'b str,
+    ) -> impl Iterator<Item = &'a FileInfo> + 'a {
+        self.files
+            .iter()
+            .filter(move |x| x.filename.starts_with(prefix))
+    }
+
+    pub(crate) fn find_single_file_mut_from_prefix<'a>(
+        &'a mut self,
+        prefix: &str,
+    ) -> Option<&'a mut FileInfo> {
+        self.files
+            .iter_mut()
+            .find(move |x| x.filename.starts_with(prefix))
+    }
+
+    // TODO: I think these lifetimes are iffy
+    /// Given some prefix (or exact version) of the id, get the file info structure
+    pub fn find_file_mut_from_prefix<'a, 'b: 'a>(
+        &'a mut self,
+        prefix: &'b str,
+    ) -> impl Iterator<Item = &'a mut FileInfo> + '_ {
+        self.files
+            .iter_mut()
+            .filter(move |x| x.filename.starts_with(prefix))
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -29,12 +61,12 @@ pub struct FileInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub original_filename: Option<String>,
 
-    /// Various comment information about the file.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub comments: HashMap<String, String>,
-
     // TODO: Should we make this a `HashSet`?
     /// The tag list for the file
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
+
+    /// Various comment information about the file.
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub comments: HashMap<String, String>,
 }

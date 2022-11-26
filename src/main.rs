@@ -69,6 +69,14 @@ enum Commands {
         #[arg(long, short, num_args = 1..)]
         tags: Vec<String>,
     },
+    #[command(arg_required_else_help = true)]
+    SetComment {
+        files: Vec<String>,
+        #[arg(long, short)]
+        message: String,
+        #[arg(long, short)]
+        title: Option<String>,
+    },
     /// Search based on tags
     #[command(arg_required_else_help = true)]
     Find {
