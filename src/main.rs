@@ -57,6 +57,11 @@ enum Commands {
         #[arg(long)]
         soft: bool,
     },
+    AddTags {
+        files: Vec<String>,
+        #[arg(long, short, num_args = 1..)]
+        tags: Vec<String>,
+    },
     /// Search based on tags
     Find {
         tags: Vec<String>,

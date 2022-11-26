@@ -48,4 +48,17 @@ impl Tagg {
             .iter()
             .filter(move |x| x.filename.starts_with(prefix))
     }
+
+    // TODO: I think these lifetimes are iffy
+    /// Given some prefix (or exact version) of the id, get the file info structure
+    pub fn find_file_mut_from_prefix<'a, 'b: 'a>(
+        &'a mut self,
+        prefix: &'b str,
+    ) -> impl Iterator<Item = &'a mut FileInfo> + 'a {
+        self.state
+            .storage
+            .files
+            .iter_mut()
+            .filter(move |x| x.filename.starts_with(prefix))
+    }
 }

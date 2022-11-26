@@ -171,6 +171,56 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
                 commit_file(tagg, added_file, dry, soft)?;
             }
         }
+        Commands::AddTags { tags, files } => {
+            let mut stdout = StandardStream::stdout(ColorChoice::Always);
+
+            for file in files {
+                let mut files = tagg.find_file_mut_from_prefix(&file).collect::<Vec<_>>();
+                if files.is_empty() {
+                    eprintln!("WARN: Failed to find file with prefix {:?}", file);
+                } else if files.len() == 1 {
+                    let file = &mut files[0];
+
+                    file.tags.extend(tags.iter().cloned());
+                    let tag_count_after = file.tags.len();
+
+                    file.tags.sort();
+                    file.tags.dedup();
+
+                    if file.tags.len() < tag_count_after {
+                        let removed = tag_count_after - file.tags.len();
+                        eprintln!(
+                            "INFO: {:?} has #{} new tags ignored due to being duplicates",
+                            file.filename, removed
+                        );
+                    }
+
+                    // TODO: inform on no tag change
+                    print_file(
+                        &mut stdout,
+                        &file.filename,
+                        file.original_filename.as_deref(),
+                        &file.tags,
+                    )?;
+                } else {
+                    writeln!(
+                        &mut stdout,
+                        "There was more than one entry which would match the prefix {:?}",
+                        file
+                    )?;
+                    for file in files {
+                        print_file(
+                            &mut stdout,
+                            &file.filename,
+                            file.original_filename.as_deref(),
+                            &file.tags,
+                        )?;
+                    }
+                }
+            }
+
+            tagg.save_state()?;
+        }
         Commands::ListAll {} => {
             list_all::list_all(&tagg.state)?;
         }
@@ -213,7 +263,6 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
                 let files = tagg.find_file_from_prefix(&file).collect::<Vec<_>>();
                 if files.is_empty() {
                     eprintln!("WARN: Failed to find file with prefix {:?}", file);
-                    continue;
                 } else if files.len() == 1 {
                     let file = files[0];
                     let path = tagg.get_storage_path(&file.filename)?;
