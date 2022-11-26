@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+use crate::util::expand_path;
+
 // We don't allow modifying the storage location with an env var, since you could cause issues by having
 // the state have files that the storage doesn't have.
 // Just create a custom config file with a storage path
@@ -19,12 +21,12 @@ pub struct Config {
     /// create bash aliases that just swap the `TAGG_STORAGE` variable)
     ///
     /// This should be a folder.
-    pub storage_path: PathBuf,
+    pub storage_path: String,
 
     /// The location where the program should store the state.  
     /// This can be overwritten with the `TAGG_STATE` environment variable.  
     #[serde(default)]
-    pub state_path: Option<PathBuf>,
+    pub state_path: Option<String>,
 
     /// Whether or not adding a file should hash it to alert you if it gets changed.  
     /// This can help avoid some accidental problems where you have an old `tagg add` around.  
@@ -38,7 +40,7 @@ pub struct Config {
 impl Config {
     pub fn config_path() -> PathBuf {
         if let Ok(config_path) = std::env::var(CONFIG_ENV_VAR) {
-            PathBuf::from(config_path)
+            expand_path(config_path)
         } else {
             // TODO: Get the path based on XDG and also for wherever windows and mac should store it
             todo!("Declare config env var")
@@ -54,8 +56,9 @@ impl Config {
 
     pub fn state_path(&self, config_path: &Path) -> eyre::Result<PathBuf> {
         if let Ok(state_path) = std::env::var(STATE_ENV_VAR) {
-            Ok(PathBuf::from(state_path))
+            Ok(expand_path(state_path))
         } else if let Some(state_path) = &self.state_path {
+            let state_path = expand_path(state_path);
             if let Some(config_parent) = config_path.parent() {
                 // Add state_path onto the end. If state path is absolute
                 // then it will just replace, otherwise it will be appended onto it.
@@ -64,7 +67,7 @@ impl Config {
                 Ok(path)
             } else if state_path.is_absolute() {
                 // We couldn't get the config parent, which is fine if the state path is absolute
-                Ok(state_path.clone())
+                Ok(state_path)
             } else {
                 Err(eyre::eyre!(
                     "Invalid config-path parent-folder when state-path is relative"
@@ -78,12 +81,13 @@ impl Config {
 
     pub fn storage_path(&self, config_path: &Path) -> eyre::Result<PathBuf> {
         let storage_path = &self.storage_path;
+        let storage_path = expand_path(storage_path);
         if let Some(config_parent) = config_path.parent() {
             let mut path = config_parent.to_path_buf();
             path.push(storage_path);
             Ok(path)
         } else if storage_path.is_absolute() {
-            Ok(storage_path.clone())
+            Ok(storage_path)
         } else {
             Err(eyre::eyre!(
                 "Invaldi config-path parent-folder when storage-path is relative"

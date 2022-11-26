@@ -3,6 +3,7 @@ pub mod config;
 pub mod state;
 pub mod storage;
 pub mod tagg;
+pub mod util;
 
 use clap::{Parser, Subcommand};
 use config::Config;
