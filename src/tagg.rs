@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::{config::Config, state::State};
+use crate::{config::Config, state::State, storage::FileInfo};
 
 pub struct Tagg {
     pub config_path: PathBuf,
@@ -34,5 +34,18 @@ impl Tagg {
         let mut storage_path = self.config.storage_path(&self.config_path)?;
         storage_path.push(name);
         Ok(storage_path)
+    }
+
+    // TODO: I think these lifetimes are iffy
+    /// Given some prefix (or exact version) of the id, get the file info structure
+    pub fn find_file_from_prefix<'a, 'b: 'a>(
+        &'a self,
+        prefix: &'b str,
+    ) -> impl Iterator<Item = &'a FileInfo> + 'a {
+        self.state
+            .storage
+            .files
+            .iter()
+            .filter(move |x| x.filename.starts_with(prefix))
     }
 }

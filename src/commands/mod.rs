@@ -205,6 +205,40 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
                 )?;
             }
         }
+        // TODO: Command to open based on tags?
+        // TODO: Command to open based on old filename?
+        // TODO: Way of displaying clickable links to the user in search/list-all that will automatically xdg-open them?
+        Commands::Open { files, using } => {
+            for file in files {
+                let files = tagg.find_file_from_prefix(&file).collect::<Vec<_>>();
+                if files.is_empty() {
+                    eprintln!("WARN: Failed to find file with prefix {:?}", file);
+                    continue;
+                } else if files.len() == 1 {
+                    let file = files[0];
+                    let path = tagg.get_storage_path(&file.filename)?;
+                    if let Some(using) = using.as_deref() {
+                        open::with(&path, using)?;
+                    } else {
+                        open::that(&path)?;
+                    }
+                } else {
+                    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+                    writeln!(
+                        &mut stdout,
+                        "There was more than one entry which would match that prefix"
+                    )?;
+                    for file in files {
+                        print_file(
+                            &mut stdout,
+                            &file.filename,
+                            file.original_filename.as_deref(),
+                            &file.tags,
+                        )?;
+                    }
+                }
+            }
+        }
     }
 
     Ok(())

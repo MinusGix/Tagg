@@ -62,6 +62,14 @@ enum Commands {
         tags: Vec<String>,
     },
     ListAll {},
+    /// Open a file in the program assigned to it via xdg-open (on Linux)
+    Open {
+        /// The files to open, note that it opens them individually
+        files: Vec<String>,
+        /// The program to use in opening it
+        #[arg(long, short)]
+        using: Option<String>,
+    },
 }
 
 fn main() -> eyre::Result<()> {
