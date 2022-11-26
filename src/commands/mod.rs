@@ -44,20 +44,7 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
                 stdout.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
                 write!(&mut stdout, "    {}  ", name)?;
 
-                stdout.set_color(&grey())?;
-                write!(&mut stdout, "[")?;
-
-                for (i, tag) in added_file.tags.iter().enumerate() {
-                    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
-                    write!(&mut stdout, "{}", tag)?;
-
-                    if i + 1 < added_file.tags.len() {
-                        stdout.set_color(ColorSpec::new().set_fg(None))?;
-                        write!(&mut stdout, ", ")?;
-                    }
-                }
-                stdout.set_color(&grey())?;
-                writeln!(&mut stdout, "]")?;
+                write_tags(&mut stdout, &added_file.tags)?;
             }
 
             stdout.set_color(ColorSpec::new().set_fg(None))?;
@@ -220,23 +207,30 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
                     write!(&mut stdout, ") ")?;
                 }
 
-                stdout.set_color(&grey())?;
-                write!(&mut stdout, "[")?;
-
-                for (i, tag) in file.tags.iter().enumerate() {
-                    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
-                    write!(&mut stdout, "{}", tag)?;
-
-                    if i + 1 < file.tags.len() {
-                        stdout.set_color(ColorSpec::new().set_fg(None))?;
-                        write!(&mut stdout, ", ")?;
-                    }
-                }
-                stdout.set_color(&grey())?;
-                writeln!(&mut stdout, "]")?;
+                write_tags(&mut stdout, &file.tags)?;
             }
         }
     }
+
+    Ok(())
+}
+
+fn write_tags<T: AsRef<str>>(out: &mut impl WriteColor, tags: &[T]) -> eyre::Result<()> {
+    out.set_color(&grey())?;
+    write!(out, "[")?;
+
+    for (i, tag) in tags.iter().enumerate() {
+        let tag = tag.as_ref();
+        out.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
+        write!(out, "{}", tag)?;
+
+        if i + 1 < tags.len() {
+            out.set_color(ColorSpec::new().set_fg(None))?;
+            write!(out, ", ")?;
+        }
+    }
+    out.set_color(&grey())?;
+    writeln!(out, "]")?;
 
     Ok(())
 }
