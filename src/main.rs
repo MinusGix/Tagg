@@ -69,6 +69,8 @@ enum Commands {
         #[arg(long, short, num_args = 1..)]
         tags: Vec<String>,
     },
+    /// Set a comment on files.  
+    /// Default title is 'comment'
     #[command(arg_required_else_help = true)]
     SetComment {
         files: Vec<String>,
@@ -76,6 +78,12 @@ enum Commands {
         message: String,
         #[arg(long, short)]
         title: Option<String>,
+    },
+    /// Set the title of a single file
+    #[command(arg_required_else_help = true)]
+    SetTitle {
+        file: String,
+        message: String,
     },
     /// Search based on tags
     #[command(arg_required_else_help = true)]

@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::{config::Config, state::State, storage::FileInfo};
+use crate::{config::Config, state::State};
 
 pub struct Tagg {
     pub config_path: PathBuf,
