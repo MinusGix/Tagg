@@ -13,7 +13,7 @@ use crate::{
 
 pub mod list_all;
 
-fn grey() -> ColorSpec {
+pub(crate) fn grey() -> ColorSpec {
     let mut spec = ColorSpec::new();
     spec.set_fg(Some(Color::Rgb(0xA3, 0xA3, 0xA3)));
     spec
@@ -172,7 +172,7 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
             }
         }
         Commands::ListAll {} => {
-            list_all::list_all(&tagg.state);
+            list_all::list_all(&tagg.state)?;
         }
         Commands::Find { tags } => {
             let mut stdout = StandardStream::stdout(ColorChoice::Always);
@@ -197,17 +197,12 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
                     }
                 }
 
-                stdout.set_color(&grey())?;
-                write!(&mut stdout, "  {} ", file.filename)?;
-                if let Some(original) = &file.original_filename {
-                    write!(&mut stdout, "(")?;
-                    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
-                    write!(&mut stdout, "{}", original)?;
-                    stdout.set_color(&grey())?;
-                    write!(&mut stdout, ") ")?;
-                }
-
-                write_tags(&mut stdout, &file.tags)?;
+                print_file(
+                    &mut stdout,
+                    &file.filename,
+                    file.original_filename.as_deref(),
+                    &file.tags,
+                )?;
             }
         }
     }
@@ -215,7 +210,27 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
     Ok(())
 }
 
-fn write_tags<T: AsRef<str>>(out: &mut impl WriteColor, tags: &[T]) -> eyre::Result<()> {
+pub(crate) fn print_file<T: AsRef<str>>(
+    out: &mut impl WriteColor,
+    filename: &str,
+    original_filename: Option<&str>,
+    tags: &[T],
+) -> eyre::Result<()> {
+    out.set_color(&grey())?;
+    write!(out, "  {} ", filename)?;
+    if let Some(original) = &original_filename {
+        write!(out, "(")?;
+        out.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
+        write!(out, "{}", original)?;
+        out.set_color(&grey())?;
+        write!(out, ") ")?;
+    }
+
+    write_tags(out, tags)?;
+    Ok(())
+}
+
+pub(crate) fn write_tags<T: AsRef<str>>(out: &mut impl WriteColor, tags: &[T]) -> eyre::Result<()> {
     out.set_color(&grey())?;
     write!(out, "[")?;
 
