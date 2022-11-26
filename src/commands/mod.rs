@@ -161,6 +161,25 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
 
             tagg.save_state()?;
         }
+        Commands::Drop { files } => {
+            for file in files {
+                let file = Some(Cow::Owned(file));
+                let mut found = false;
+                tagg.state.registration_area.retain(|added_file| {
+                    if file == added_file.path.file_name().map(|x| x.to_string_lossy()) {
+                        found = true;
+                        false
+                    } else {
+                        true
+                    }
+                });
+                if !found {
+                    eprintln!("Failed to find {:?} in registration-area", file);
+                }
+            }
+
+            tagg.save_state()?;
+        }
         Commands::Commit { dry, soft } => {
             if tagg.state.registration_area.is_empty() {
                 eprintln!("There was no files in the registration area to commit.");

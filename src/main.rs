@@ -35,6 +35,11 @@ enum Commands {
         #[arg(long, short, num_args = 1..)]
         tags: Vec<String>,
     },
+    /// Drop files from the registration-area
+    #[command(arg_required_else_help = true)]
+    Drop {
+        files: Vec<String>,
+    },
     // /// Add a file immediately into the storage, without going into registration
     // #[command(arg_required_else_help = true)]
     // AddQ {
@@ -57,17 +62,20 @@ enum Commands {
         #[arg(long)]
         soft: bool,
     },
+    #[command(arg_required_else_help = true)]
     AddTags {
         files: Vec<String>,
         #[arg(long, short, num_args = 1..)]
         tags: Vec<String>,
     },
     /// Search based on tags
+    #[command(arg_required_else_help = true)]
     Find {
         tags: Vec<String>,
     },
     ListAll {},
     /// Open a file in the program assigned to it via xdg-open (on Linux)
+    #[command(arg_required_else_help = true)]
     Open {
         /// The files to open, note that it opens them individually
         files: Vec<String>,
