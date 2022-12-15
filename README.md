@@ -3,6 +3,11 @@
 A CLI tagging program (and library) for your files.  
   
 ## Installing
+
+Currently you have to git clone this repo and build it manually. If someone actually wants to use this other than me, then I can put it on crates.io and make a release build.
+  
+If (pdftitle)[https://github.com/metebalci/pdftitle] is installed, it will automatically extract the title information from pdfs and attach them to the file.
+
   
 ## General Design
 The basic implementation of Tagg is to simply have a folder of your added files, and then have the tags (and other information) stored in a separate file.  

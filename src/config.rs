@@ -36,6 +36,9 @@ pub struct Config {
     /// after the last file added to the registration-area, the area is cleared (the files being
     /// unchanged) to avoid accidentally including them if you forget.  
     pub registration_delay_limit: u64,
+
+    /// Whether it should extract titles from pdf documents and store them
+    pub extract_pdf_titles: bool,
 }
 impl Config {
     pub fn config_path() -> PathBuf {

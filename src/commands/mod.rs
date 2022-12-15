@@ -5,6 +5,7 @@ use inquire::Confirm;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use crate::storage::Storage;
+use crate::util::{expand_path, extract_title};
 use crate::{
     state::{AddedFile, COMMENT_MAIN},
     storage::FileInfo,
@@ -253,6 +254,33 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
 
             tagg.save_state()?;
         }
+        Commands::GenerateTitles { dry } => {
+            for file in tagg.state.storage.files.iter_mut() {
+                if file.comments.contains_key("title") {
+                    continue;
+                }
+
+                let mut path = expand_path(&tagg.config.storage_path);
+                path.push(&file.filename);
+                let extension = path
+                    .extension()
+                    .map(|x| x.to_string_lossy())
+                    .unwrap_or(Cow::Borrowed(""));
+
+                if let Some(title) = extract_title(&path, &extension) {
+                    if tagg.verbose {
+                        eprintln!("Set {}'s title to {:?}", file.filename, title);
+                    }
+                    file.comments.insert("title".to_string(), title);
+                } else if tagg.verbose {
+                    eprintln!("Failed to get title for {:?}", path);
+                }
+            }
+
+            if !dry {
+                tagg.save_state()?;
+            }
+        }
         Commands::SetDesc { file, message } => {
             let title = "desc".to_string();
             if let Some(file) =
@@ -311,6 +339,7 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
                         open::with(&path, using)?;
                     } else {
                         open::that(&path)?;
+                        // open::that(&path)?;
                     }
                 }
             }
@@ -440,6 +469,13 @@ fn commit_file(tagg: &mut Tagg, added_file: AddedFile, dry: bool, soft: bool) ->
         .map(|x| x.to_string_lossy())
         .unwrap_or(Cow::Borrowed(""));
 
+    let mut comments = added_file.comment;
+    if !comments.contains_key("title") {
+        if let Some(title) = extract_title(&added_file.path, &extension) {
+            comments.insert("title".to_string(), title);
+        }
+    }
+
     // Unique filename
     let filename = tagg.choose_filename(&extension);
     if tagg.verbose {
@@ -474,7 +510,7 @@ fn commit_file(tagg: &mut Tagg, added_file: AddedFile, dry: bool, soft: bool) ->
     let file_info = FileInfo {
         filename,
         original_filename,
-        comments: added_file.comment,
+        comments,
         tags: added_file.tags,
     };
 

@@ -85,6 +85,14 @@ enum Commands {
         file: String,
         message: String,
     },
+    /// Generate titles for all stored files.
+    /// Does not overwrite existing titles.  
+    /// This is primarily intended for when new title-information-extraction code is added
+    /// so that old files can be updated.
+    GenerateTitles {
+        #[arg(long)]
+        dry: bool,
+    },
     /// Set the desc of a single file
     #[command(arg_required_else_help = true)]
     SetDesc {
