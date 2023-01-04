@@ -322,7 +322,7 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
                     file.original_filename.as_deref(),
                     &file.tags,
                     &file.comments,
-                    tags.clone(),
+                    &tags,
                 )?;
             }
         }
@@ -455,14 +455,18 @@ pub(crate) fn write_tags<T: AsRef<str>>(out: &mut impl WriteColor, tags: &[T]) -
     Ok(())
 }
 
-pub(crate) fn write_matched_tags<T: AsRef<str>>(out: &mut impl WriteColor, tags: &[T], matched_tags: Vec<String>) -> eyre::Result<()> {
+pub(crate) fn write_matched_tags<T: AsRef<str>, U: AsRef<str>>(
+    out: &mut impl WriteColor,
+    tags: &[T],
+    matched_tags: &[U],
+) -> eyre::Result<()> {
     out.set_color(&grey())?;
     write!(out, "[")?;
 
     for (i, tag) in tags.iter().enumerate() {
         let tag = tag.as_ref();
         // add a clause here to color the specific taggs used with `$ tagg find tag1 tag2 ...`
-        if matched_tags.contains(&tag.to_string()) {
+        if matched_tags.iter().any(|x| x.as_ref() == tag) {
             out.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
             write!(out, "{}", tag)?;
         } else {
@@ -481,13 +485,13 @@ pub(crate) fn write_matched_tags<T: AsRef<str>>(out: &mut impl WriteColor, tags:
     Ok(())
 }
 
-pub(crate) fn print_file_comments_colored<T: AsRef<str>>(
+pub(crate) fn print_file_comments_colored<T: AsRef<str>, U: AsRef<str>>(
     out: &mut impl WriteColor,
     filename: &str,
     original_filename: Option<&str>,
     tags: &[T],
     comments: &HashMap<String, String>,
-    matched_tags: Vec<String>
+    matched_tags: &[U],
 ) -> eyre::Result<()> {
     out.set_color(&grey())?;
     write!(out, "  {} ", filename)?;
