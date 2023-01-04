@@ -316,12 +316,13 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
                     }
                 }
 
-                print_file_comments(
+                print_file_comments_colored(
                     &mut stdout,
                     &file.filename,
                     file.original_filename.as_deref(),
                     &file.tags,
                     &file.comments,
+                    tags.clone(),
                 )?;
             }
         }
@@ -451,6 +452,67 @@ pub(crate) fn write_tags<T: AsRef<str>>(out: &mut impl WriteColor, tags: &[T]) -
     out.set_color(&grey())?;
     writeln!(out, "]")?;
 
+    Ok(())
+}
+
+pub(crate) fn write_matched_tags<T: AsRef<str>>(out: &mut impl WriteColor, tags: &[T], matched_tags: Vec<String>) -> eyre::Result<()> {
+    out.set_color(&grey())?;
+    write!(out, "[")?;
+
+    for (i, tag) in tags.iter().enumerate() {
+        let tag = tag.as_ref();
+        // add a clause here to color the specific taggs used with `$ tagg find tag1 tag2 ...`
+        if matched_tags.contains(&tag.to_string()) {
+            out.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
+            write!(out, "{}", tag)?;
+        } else {
+            out.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
+            write!(out, "{}", tag)?;
+        }
+
+        if i + 1 < tags.len() {
+            out.set_color(ColorSpec::new().set_fg(None))?;
+            write!(out, ", ")?;
+        }
+    }
+    out.set_color(&grey())?;
+    writeln!(out, "]")?;
+
+    Ok(())
+}
+
+pub(crate) fn print_file_comments_colored<T: AsRef<str>>(
+    out: &mut impl WriteColor,
+    filename: &str,
+    original_filename: Option<&str>,
+    tags: &[T],
+    comments: &HashMap<String, String>,
+    matched_tags: Vec<String>
+) -> eyre::Result<()> {
+    out.set_color(&grey())?;
+    write!(out, "  {} ", filename)?;
+    if let Some(original) = &original_filename {
+        write!(out, "(")?;
+        out.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
+        write!(out, "{}", original)?;
+        out.set_color(&grey())?;
+        write!(out, ") ")?;
+    }
+
+    write_matched_tags(out, tags, matched_tags)?;
+
+    for (title, comment) in comments.iter() {
+        write!(out, "    - ")?;
+        if title != COMMENT_MAIN {
+            out.set_color(&grey())?;
+            write!(out, "{}", title)?;
+            out.reset()?;
+            write!(out, ": ")?;
+        }
+
+        out.set_color(&light_grey())?;
+        writeln!(out, "{}", comment)?;
+    }
     Ok(())
 }
 
