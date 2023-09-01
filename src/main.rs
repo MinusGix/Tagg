@@ -103,6 +103,9 @@ enum Commands {
     #[command(arg_required_else_help = true)]
     Find {
         tags: Vec<String>,
+        #[arg(long = "ignore-case", short = 'i')]
+        /// case insensitive matching 
+        case_insensitive: bool,
     },
     ListAll {},
     /// Open a file in the program assigned to it via xdg-open (on Linux)
@@ -114,6 +117,13 @@ enum Commands {
         #[arg(long, short)]
         using: Option<String>,
     },
+    // /// Copy full file path to clipboard
+    // #[command(arg_required_else_help = true)]
+    // CopyPath {
+    //     /// The files to copy separated by new line
+    //     files: Vec<String>,
+    // },
+
 }
 
 fn main() -> eyre::Result<()> {

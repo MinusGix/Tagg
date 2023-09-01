@@ -294,13 +294,21 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
         Commands::ListAll {} => {
             list_all::list_all(&tagg.state)?;
         }
-        Commands::Find { tags } => {
+        Commands::Find { tags, case_insensitive } => {
             'outer: for file in tagg.state.storage.files.iter() {
                 for tag in tags.iter() {
                     if let Some(tag) = tag.strip_prefix('-') {
-                        if file.tags.iter().any(|x| x.as_str() == tag) {
+                        if case_insensitive { // This if-else block seems redundant(can't figure out yet how exactly find works with all the clauses...)
+                            if file.tags.iter().any(|x| x.as_str().eq_ignore_ascii_case(tag)) {
+                                // We found a filtered out tag
+                                continue 'outer;
+                            }
+                        }
+                        else {
+                            if file.tags.iter().any(|x| x.as_str() == tag) {
                             // We found a filtered out tag
                             continue 'outer;
+                            }
                         }
                     } else {
                         let tag = if let Some(tag) = tag.strip_prefix('+') {
@@ -308,10 +316,17 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
                         } else {
                             tag.as_str()
                         };
-
-                        if !file.tags.iter().any(|x| x.as_str() == tag) {
-                            // We didn't find the tag
+                        if case_insensitive {
+                            if !file.tags.iter().any(|x| x.as_str().eq_ignore_ascii_case(tag)) {
+                                // We didn't find the tag
+                                continue 'outer;
+                            }
+                        }
+                        else {
+                            if !file.tags.iter().any(|x| x.as_str() == tag) {
+                            // We found a filtered out tag
                             continue 'outer;
+                            }
                         }
                     }
                 }
