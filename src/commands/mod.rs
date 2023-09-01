@@ -294,13 +294,21 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
         Commands::ListAll {} => {
             list_all::list_all(&tagg.state)?;
         }
-        Commands::Find { tags } => {
+        Commands::Find { tags, case_insensitive } => {
             'outer: for file in tagg.state.storage.files.iter() {
                 for tag in tags.iter() {
                     if let Some(tag) = tag.strip_prefix('-') {
-                        if file.tags.iter().any(|x| x.as_str() == tag) {
+                        if case_insensitive { // This if-else block seems redundant(can't figure out yet how exactly find works with all the clauses...)
+                            if file.tags.iter().any(|x| x.as_str().eq_ignore_ascii_case(tag)) {
+                                // We found a filtered out tag
+                                continue 'outer;
+                            }
+                        }
+                        else {
+                            if file.tags.iter().any(|x| x.as_str() == tag) {
                             // We found a filtered out tag
                             continue 'outer;
+                            }
                         }
                     } else {
                         let tag = if let Some(tag) = tag.strip_prefix('+') {
@@ -308,10 +316,17 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
                         } else {
                             tag.as_str()
                         };
-
-                        if !file.tags.iter().any(|x| x.as_str() == tag) {
-                            // We didn't find the tag
+                        if case_insensitive {
+                            if !file.tags.iter().any(|x| x.as_str().eq_ignore_ascii_case(tag)) {
+                                // We didn't find the tag
+                                continue 'outer;
+                            }
+                        }
+                        else {
+                            if !file.tags.iter().any(|x| x.as_str() == tag) {
+                            // We found a filtered out tag
                             continue 'outer;
+                            }
                         }
                     }
                 }
@@ -323,6 +338,7 @@ pub(crate) fn dispatch(tagg: &mut Tagg, command: Commands) -> eyre::Result<()> {
                     &file.tags,
                     &file.comments,
                     &tags,
+                    &case_insensitive,
                 )?;
             }
         }
@@ -459,6 +475,7 @@ pub(crate) fn write_matched_tags<T: AsRef<str>, U: AsRef<str>>(
     out: &mut impl WriteColor,
     tags: &[T],
     matched_tags: &[U],
+    case_insensitive: &bool,
 ) -> eyre::Result<()> {
     out.set_color(&grey())?;
     write!(out, "[")?;
@@ -466,12 +483,22 @@ pub(crate) fn write_matched_tags<T: AsRef<str>, U: AsRef<str>>(
     for (i, tag) in tags.iter().enumerate() {
         let tag = tag.as_ref();
         // add a clause here to color the specific taggs used with `$ tagg find tag1 tag2 ...`
-        if matched_tags.iter().any(|x| x.as_ref() == tag) {
-            out.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
-            write!(out, "{}", tag)?;
+        if !case_insensitive {
+            if matched_tags.iter().any(|x| x.as_ref() == tag) {
+                out.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
+                write!(out, "{}", tag)?;
+            } else {
+                out.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
+                write!(out, "{}", tag)?;
+            }
         } else {
-            out.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
-            write!(out, "{}", tag)?;
+            if matched_tags.iter().any(|x| x.as_ref().eq_ignore_ascii_case(tag)) {
+                out.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
+                write!(out, "{}", tag)?;
+            } else {
+                out.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
+                write!(out, "{}", tag)?;
+            }
         }
 
         if i + 1 < tags.len() {
@@ -492,6 +519,7 @@ pub(crate) fn print_file_comments_colored<T: AsRef<str>, U: AsRef<str>>(
     tags: &[T],
     comments: &HashMap<String, String>,
     matched_tags: &[U],
+    case_insensitive: &bool,
 ) -> eyre::Result<()> {
     out.set_color(&grey())?;
     write!(out, "  {} ", filename)?;
@@ -503,7 +531,7 @@ pub(crate) fn print_file_comments_colored<T: AsRef<str>, U: AsRef<str>>(
         write!(out, ") ")?;
     }
 
-    write_matched_tags(out, tags, matched_tags)?;
+    write_matched_tags(out, tags, matched_tags, case_insensitive)?;
 
     for (title, comment) in comments.iter() {
         write!(out, "    - ")?;
